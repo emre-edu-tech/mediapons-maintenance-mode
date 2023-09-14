@@ -1,1 +1,1 @@
-{"version":3,"file":"index.js","mappings":";;;;;AAAAA,OAAO,CAACC,GAAG,CAAC,sBAAsB,CAAC,C","sources":["webpack://media-pons-maintenance-mode/./src/index.js"],"sourcesContent":["console.log('index.js file loaded')"],"names":["console","log"],"sourceRoot":""}
+{"version":3,"file":"index.js","mappings":";;;;;AAAAA,OAAO,CAACC,GAAG,CAAC,sBAAsB,CAAC,C","sources":["webpack://mediapons-maintenance-mode/./src/index.js"],"sourcesContent":["console.log('index.js file loaded')"],"names":["console","log"],"sourceRoot":""}

@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Admin styles */
+h1 {
+    @apply text-2xl;
+}
+
+h2 {
+    @apply text-xl;
+}
+
+h3 {
+    @apply text-lg;
+}
+
+.form-table th {
+    vertical-align: middle;
+}
+
+.wp-editor-wrap {
+    width: 50%;
+}
+
+input[type=text], input[type=email], input[type=url], input[type=tel], textarea {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 50%;
+}
