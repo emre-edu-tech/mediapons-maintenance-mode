@@ -26,9 +26,7 @@ class MpMaintenanceMode {
         if(get_option('mp_toggle_maintenance_page', '0') == '1') {
             global $pagenow;
             if($pagenow !== 'wp-login.php' && !current_user_can('manage_options') && !is_admin()) {
-                // The code below may prevent the search engines to index our maintenance page 
-                header($_SERVER["SERVER_PROTOCOL"] . ' 503 Service Temporarily Unavailable', true, 503);
-                header('Content-Type: text/html; charset=utf-8');
+                // The code below may prevent the search engines to index our maintenance page
                 if(file_exists(plugin_dir_path(__FILE__) . 'views/maintenance.php')) {
                     require_once(plugin_dir_path(__FILE__) . 'views/maintenance.php');
                 }
