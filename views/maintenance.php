@@ -7,7 +7,7 @@
     <title>
         <?php echo get_option('mp_page_title', __('Down for Maintenance', 'mp-maintenance')) ?> - <?php bloginfo('name') ?>
     </title>
-    <link rel="shortcut icon" href="<?php echo plugin_dir_url(__DIR__) . 'img/logout-icon.svg'?>" type="image/x-icon">
+    <link rel="shortcut icon" href="<?php echo get_option('mp_company_logo') ? get_option('mp_company_logo') : plugin_dir_url(__DIR__) . 'img/logout-icon.svg' ?>" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo plugin_dir_url(__DIR__) . 'build/index.css' ?>">
 </head>

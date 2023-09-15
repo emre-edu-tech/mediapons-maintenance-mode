@@ -14,20 +14,44 @@ if(!defined('ABSPATH')) exit;
 class MpMaintenanceMode {
     function __construct()
     {
+        add_action('init', [$this, 'mp_maintenance_load_textdomain']);
         add_action('admin_enqueue_scripts', [$this, 'mp_maintenance_admin_style']);
         add_action('admin_menu', [$this, 'admin_page']);
         add_action('admin_init', [$this, 'admin_settings']);
         add_action('wp_loaded', [$this, 'mp_maintenance_mode']);
     }
 
+    // Main function for maintenance page logic
+    function mp_maintenance_mode() {
+        if(get_option('mp_toggle_maintenance_page', '0') == '1') {
+            global $pagenow;
+            if($pagenow !== 'wp-login.php' && !current_user_can('manage_options') && !is_admin()) {
+                // The code below may prevent the search engines to index our maintenance page 
+                header($_SERVER["SERVER_PROTOCOL"] . ' 503 Service Temporarily Unavailable', true, 503);
+                header('Content-Type: text/html; charset=utf-8');
+                if(file_exists(plugin_dir_path(__FILE__) . 'views/maintenance.php')) {
+                    require_once(plugin_dir_path(__FILE__) . 'views/maintenance.php');
+                }
+                die();
+            }
+        }
+    }
+
+    // Load plugin text domain for translation purposes
+    function mp_maintenance_load_textdomain() {
+        load_plugin_textdomain('mp-maintenance', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    }
+
     function mp_maintenance_admin_style($hook_suffix) {
         if($hook_suffix != 'settings_page_mediapons-maintenance') {
             return;
         }
-        wp_enqueue_style('mediapons-maintenance-css', plugin_dir_url(__FILE__) . 'build/index.css');
+        wp_enqueue_style('mediapons-maintenance-style', plugin_dir_url(__FILE__) . 'build/index.css');
+        wp_enqueue_script('mediapons-maintenance-script', plugin_dir_url(__FILE__) . 'build/index.js', [], '1.0', true);
     }
 
     // Text inputs for the maintenance page options
+    // 0- Enable/Disable Maintenance Page
     // 1- Page title
     // 2- Company Name
     // 3- Logo
@@ -41,8 +65,15 @@ class MpMaintenanceMode {
         // Add section on the page
         add_settings_section('mp_maintenance_section', __('Page Features', 'mp-maintenance'), null, 'mediapons-maintenance');
 
+        // Enable/Disable Maintenance Page
+        add_settings_field('mp_toggle_maintenance_page', __('Enable Maintenace Page', 'mp-maintenance'), [$this, 'general_checkbox_html'], 'mediapons-maintenance', 'mp_maintenance_section', ['custom_option_name' => 'mp_toggle_maintenance_page']);
+        register_setting('mpmaintenance', 'mp_toggle_maintenance_page', [
+            'sanitize_callback' => [$this, 'sanitize_toggle_maintenance_page'],
+            'default' => ''
+        ]);
+
         // Page Title Field
-        add_settings_field( 'mp_page_title', __('Page Title', 'mp-maintenance'), [$this, 'page_title_html'], 'mediapons-maintenance', 'mp_maintenance_section');
+        add_settings_field('mp_page_title', __('Page Title', 'mp-maintenance'), [$this, 'page_title_html'], 'mediapons-maintenance', 'mp_maintenance_section');
         register_setting('mpmaintenance', 'mp_page_title', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
@@ -94,20 +125,32 @@ class MpMaintenanceMode {
         ]);
     }
 
+    function general_checkbox_html($args) { ?>
+        <input id="toggle-maintenance-page" type="checkbox" name="<?php echo $args['custom_option_name'] ?>" value="1" <?php checked(get_option($args['custom_option_name']), '1') ?>>
+    <?php }
+
+    function sanitize_toggle_maintenance_page($input_val) {
+        if($input_val != '1' && $input_val != '') {
+            add_settings_error('mp_toggle_maintenance_page', 'mp_toggle_maintenance_page_error', __('Maintenance Page Toggle checkbox value is wrong. Try again!', 'mp-maintenance'));
+            return get_option('mp_toggle_maintenance_page');
+        }
+        return $input_val;
+    }
+
     function phone_button_number_html() { ?>
-        <input type="tel" name="mp_phone_button_number" value="<?php echo esc_attr(get_option('mp_phone_button_number')) ?>" placeholder="<?php _e('Enter Phone Number with Country Code (XX XXX XX XX)', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="tel" name="mp_phone_button_number" value="<?php echo esc_attr(get_option('mp_phone_button_number')) ?>" placeholder="<?php _e('Enter Phone Number with Country Code (XX XXX XX XX)', 'mp-maintenance') ?>">
     <?php }
 
     function phone_button_text_html() { ?>
-        <input type="text" name="mp_phone_button_text" value="<?php echo esc_attr(get_option('mp_phone_button_text')) ?>" placeholder="<?php _e('Enter Phone Button Text', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_phone_button_text" value="<?php echo esc_attr(get_option('mp_phone_button_text')) ?>" placeholder="<?php _e('Enter Phone Button Text', 'mp-maintenance') ?>">
     <?php }
 
     function email_button_address_html() { ?>
-        <input type="email" name="mp_email_button_address" value="<?php echo esc_attr(get_option('mp_email_button_address')) ?>" placeholder="<?php _e('Enter Email Address', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="email" name="mp_email_button_address" value="<?php echo esc_attr(get_option('mp_email_button_address')) ?>" placeholder="<?php _e('Enter Email Address', 'mp-maintenance') ?>">
     <?php }
 
     function email_button_text_html() { ?>
-        <input type="text" name="mp_email_button_text" value="<?php echo esc_attr(get_option('mp_email_button_text')) ?>" placeholder="<?php _e('Enter Email Button Text', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting<?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_email_button_text" value="<?php echo esc_attr(get_option('mp_email_button_text')) ?>" placeholder="<?php _e('Enter Email Button Text', 'mp-maintenance') ?>">
     <?php }
 
     function maintenance_description_html() {
@@ -121,7 +164,7 @@ class MpMaintenanceMode {
     }
 
     function maintenance_heading_html() { ?>
-        <input type="text" name="mp_maintenance_heading" value="<?php echo esc_attr(get_option('mp_maintenance_heading')) ?>" placeholder="<?php _e('Enter Maintenance Heading', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_maintenance_heading" value="<?php echo esc_attr(get_option('mp_maintenance_heading')) ?>" placeholder="<?php _e('Enter Maintenance Heading', 'mp-maintenance') ?>">
     <?php }
 
     function handle_logo_upload($input_val) {
@@ -139,7 +182,7 @@ class MpMaintenanceMode {
 
     function company_logo_html() { ?>
         <div class="flex items-center">
-            <input type="file" name="mp_company_logo">
+            <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'disabled' ?> class="maintenance-setting-file" type="file" name="mp_company_logo">
             <?php if(get_option('mp_company_logo', '') !== ''): ?>
                 <span class="font-semibold mr-2"><?php _e('Current Logo:', ' mp-maintenance') ?></span>
                 <img src="<?php echo get_option('mp_company_logo') ?>" alt="Logo">
@@ -150,11 +193,11 @@ class MpMaintenanceMode {
     <?php }
 
     function company_name_html() { ?>
-        <input type="text" name="mp_company_name" value="<?php echo esc_attr(get_option('mp_company_name')) ?>" placeholder="<?php _e('Enter Maintenance Mode Title', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_company_name" value="<?php echo esc_attr(get_option('mp_company_name')) ?>" placeholder="<?php _e('Enter Maintenance Mode Title', 'mp-maintenance') ?>">
     <?php }
 
     function page_title_html() { ?>
-        <input type="text" name="mp_page_title" value="<?php echo esc_attr(get_option('mp_page_title')) ?>" placeholder="<?php _e('Enter Maintenance Page Browser Title', 'mp-maintenance') ?>">
+        <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_page_title" value="<?php echo esc_attr(get_option('mp_page_title')) ?>" placeholder="<?php _e('Enter Maintenance Page Browser Title', 'mp-maintenance') ?>">
     <?php }
 
     function settings_page_content() { ?>
@@ -166,7 +209,7 @@ class MpMaintenanceMode {
                     // page_slug: mediapons-maintenance
                     settings_fields('mpmaintenance');
                     do_settings_sections('mediapons-maintenance');
-                    submit_button();
+                    submit_button(__('Save settings', 'mp-maintenance'), 'primary', 'submit', false);
                 ?>
             </form>
         </div>
@@ -174,20 +217,6 @@ class MpMaintenanceMode {
 
     function admin_page() {
         add_options_page(__('Maintenance Page Settings', 'mp-maintenance'), __('Maintenance Page', 'mp-maintenance'), 'manage_options', 'mediapons-maintenance', [$this, 'settings_page_content']);
-    }
-
-    // Function for main functionality
-    function mp_maintenance_mode() {
-        global $pagenow;
-        if($pagenow !== 'wp-login.php' && !current_user_can('manage_options') && !is_admin()) {
-            // The code below may prevent the search engines to index our maintenance page 
-            header($_SERVER["SERVER_PROTOCOL"] . ' 503 Service Temporarily Unavailable', true, 503);
-		    header('Content-Type: text/html; charset=utf-8');
-            if(file_exists(plugin_dir_path(__FILE__) . 'views/maintenance.php')) {
-                require_once(plugin_dir_path(__FILE__) . 'views/maintenance.php');
-            }
-            die();
-        }
     }
 }
 
