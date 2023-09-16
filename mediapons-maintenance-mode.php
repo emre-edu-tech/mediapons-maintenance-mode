@@ -26,7 +26,9 @@ class MpMaintenanceMode {
         if(get_option('mp_toggle_maintenance_page', '0') == '1') {
             global $pagenow;
             if($pagenow !== 'wp-login.php' && !current_user_can('manage_options') && !is_admin()) {
-                // The code below may prevent the search engines to index our maintenance page
+                // The code below may prevent the search engines to index our maintenance page 
+                header($_SERVER["SERVER_PROTOCOL"] . ' 503 Service Temporarily Unavailable', true, 503);
+                header('Content-Type: text/html; charset=utf-8');
                 if(file_exists(plugin_dir_path(__FILE__) . 'views/maintenance.php')) {
                     require_once(plugin_dir_path(__FILE__) . 'views/maintenance.php');
                 }
@@ -165,10 +167,22 @@ class MpMaintenanceMode {
         <input <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : 'readonly' ?> class="maintenance-setting <?php echo get_option('mp_toggle_maintenance_page') == '1' ? '' : ' opacity-50' ?>" type="text" name="mp_maintenance_heading" value="<?php echo esc_attr(get_option('mp_maintenance_heading')) ?>" placeholder="<?php _e('Enter Maintenance Heading', 'mp-maintenance') ?>">
     <?php }
 
+    // This function changes the path for Wordpress default uploads directory and url
+    // This function has been used with handle_logo_upload function
+    function mediapons_upload_dir($dirs) {
+        $dirs['subdir'] = '/mp-maintenance';
+        $dirs['path'] = $dirs['basedir'] . '/mp-maintenance';
+        $dirs['url'] = $dirs['baseurl'] . '/mp-maintenance';
+
+        return $dirs;
+    }
+
     function handle_logo_upload($input_val) {
         if(!empty($_FILES['mp_company_logo']['name'])) {
+            add_filter('upload_dir', [$this, 'mediapons_upload_dir']);
             $uploaded_file = wp_handle_upload($_FILES['mp_company_logo'], ['test_form' => false]);
             $uploaded_file_url = $uploaded_file['url'];
+            remove_filter('upload_dir', [$this, 'mediapons_upload_dir']);
             return $uploaded_file_url;
         } else {
             if(get_option('mp_company_logo')) {
